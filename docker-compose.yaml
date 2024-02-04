@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  broker:
+    container_name: broker
+    image: redis:6.2-alpine
+    ports:
+      - "6379:6379"
+  db:
+    container_name: db
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+  eventprocessor:
+    container_name: eventprocessor
+    image: eventprocessor
+    build: .
+    command: /home/processor
+    depends_on:
+      - db
+      - broker
+    environment:
+      REDIS_ADDR: broker:6379
+      MONGO_USERNAME: root
+      MONGO_PASSWORD: root
+      MONGO_HOST: db
+      MONGO_DATABASE: admin
+  eventhandler:
+    container_name: eventhandler
+    image: eventhandler
+    ports:
+      - "8080:8080"
+    build: .
+    command: /home/api
+    depends_on:
+      - broker
+    environment:
+      REDIS_ADDR: broker:6379
+
